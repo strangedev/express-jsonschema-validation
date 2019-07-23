@@ -4,6 +4,12 @@ const path = require("path");
 const assert = require("assert");
 const { isNil, map, pipe, filter, propEq, prop, isEmpty } = require("ramda");
 
+/**
+ * Returns a validator with all schemata from the given directory
+ *
+ * @param {string} dir An path to a directory containing json schema files.
+ * @param {*} metaschema A path to a metaschema to use.
+ */
 function validator(dir, metaschema = "ajv/lib/refs/json-schema-draft-04.json") {
   const ajv = new Ajv({ schemaId: "auto" });
   ajv.addMetaSchema(require(metaschema));
@@ -18,6 +24,14 @@ function validator(dir, metaschema = "ajv/lib/refs/json-schema-draft-04.json") {
   return ajv;
 }
 
+/**
+ * Returns a middleware that validates the requests body against the schema for
+ * the given name. Aborts the request and sends a status code of 400 and valida-
+ * tion errors, if the validation fails.
+ *
+ * @param {*} ajv Validator object as returned from `validator` above.
+ * @param {String} schema Name of a schema that must be present in the validator.
+ */
 function inBody(ajv, schema) {
   return (req, res, next) => {
     if (!ajv.validate(schema, req.body)) {
@@ -32,6 +46,14 @@ function inBody(ajv, schema) {
   };
 }
 
+/**
+ * Returns a sender function that takes a response, a body and optionally a
+ * status code and only sends the response, if the body matches the schema for
+ * the given name. Otherwise aborts the request and sends a status of 500.
+ *
+ * @param {*} ajv Validator object as returned from `validator` above.
+ * @param {String} schema Name of a schema that must be present in the validator.
+ */
 function sender(ajv, schema) {
   return (res, body, status = 200) => {
     if (!ajv.validate(schema, body)) {
@@ -46,11 +68,9 @@ function sender(ajv, schema) {
 }
 
 /**
- * Middleware that checks if a list of type/key pairs is present in the query
- * string of the request.
- * In some type cases it transforms the parameter to match the type, i.e.
- * Numbers, which are sent as strings in the query string, are parsed to js
- * Numbers.
+ * Retuns a middleware that matches a list of type/key pairs against the query
+ * parameters of the request. Only `number` and `string` make sense as types to
+ * check for currently.
  *
  * @param  {...any} params
  */

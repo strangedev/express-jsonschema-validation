@@ -1,0 +1,18 @@
+{
+  "people": [
+    {
+      "firstName": "John",
+      "lastName": "Doe",
+      "age": 21
+    },
+    {
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "age": 22
+    }
+  ],
+  "location": {
+    "latitude": 48.858093,
+    "longitude": 2.294694
+  }
+}

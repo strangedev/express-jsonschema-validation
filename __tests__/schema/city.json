@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "City",
+  "description": "A City at a Geolocation with a number of Persons in it",
+  "type": "object",
+  "properties": {
+    "location": {
+      "$ref": "geolocation.json"
+    },
+    "people": {
+      "type": "array",
+      "items": {
+        "$ref": "person.json"
+      }
+    }
+  },
+  "required": ["location", "people"]
+}

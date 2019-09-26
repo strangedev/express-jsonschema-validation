@@ -1,4 +1,4 @@
-const { validator, inBody, inQuery, sender } = require("../validation");
+const { inQuery, schemaInBody, schemaInQuery, sender, validator } = require("../validation");
 
 describe("validator", () => {
   it("returns a validator with all schemata in a directory", () => {
@@ -10,10 +10,10 @@ describe("validator", () => {
   });
 });
 
-describe("inBody", () => {
+describe("schemaInBody", () => {
   it("accepts a valid body", () => {
     const ajv = validator(__dirname + "/schema");
-    const middleware = inBody(ajv, "city.json");
+    const middleware = schemaInBody(ajv, "city.json");
     const req = {
       body: require("./data/city")
     };
@@ -30,7 +30,7 @@ describe("inBody", () => {
 
   it("rejects a body with missing fields", () => {
     const ajv = validator(__dirname + "/schema");
-    const middleware = inBody(ajv, "city.json");
+    const middleware = schemaInBody(ajv, "city.json");
     const req = {
       body: require("./data/invalidCity")
     };
@@ -47,9 +47,68 @@ describe("inBody", () => {
 
   it("rejects a body with incorrect field types", () => {
     const ajv = validator(__dirname + "/schema");
-    const middleware = inBody(ajv, "city.json");
+    const middleware = schemaInBody(ajv, "city.json");
     const req = {
       body: require("./data/invalidCity1")
+    };
+    const res = {
+      status: jest.fn(),
+      send: jest.fn()
+    };
+    const next = jest.fn();
+    middleware(req, res, next);
+    expect(res.status).toBeCalledWith(400);
+    expect(res.send).toBeCalled();
+    expect(next).not.toBeCalled();
+  });
+});
+
+describe("schemaInQuery", () => {
+  it("accepts a valid query parameter", () => {
+    const ajv = validator(__dirname + "/schema");
+    const middleware = schemaInQuery(ajv, "city.json", "field");
+    const req = {
+      query: {
+        field: JSON.stringify(require("./data/city"))
+      }
+    };
+    const res = {
+      send: jest.fn(),
+      status: jest.fn()
+    };
+    const next = jest.fn();
+    middleware(req, res, next);
+    expect(res.status).not.toBeCalled();
+    expect(res.send).not.toBeCalled();
+    expect(next).toBeCalled();
+  });
+
+  it("rejects a query parameter with missing fields", () => {
+    const ajv = validator(__dirname + "/schema");
+    const middleware = schemaInQuery(ajv, "city.json", "field");
+    const req = {
+      query: {
+        field: JSON.stringify(require("./data/invalidCity"))
+      }
+    };
+    const res = {
+      status: jest.fn(),
+      send: jest.fn()
+    };
+    const next = jest.fn();
+    middleware(req, res, next);
+    expect(res.status).toBeCalledWith(400);
+    expect(res.send).toBeCalled();
+    expect(next).not.toBeCalled();
+  });
+
+  it("rejects a query parameter with incorrect field types", () => {
+    const ajv = validator(__dirname + "/schema");
+    const middleware = schemaInQuery(ajv, "city.json", "field");
+    const req = {
+      query: {
+        field: JSON.stringify(require("./data/invalidCity1"))
+      }
     };
     const res = {
       status: jest.fn(),

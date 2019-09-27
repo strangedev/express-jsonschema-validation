@@ -7,7 +7,7 @@ const { isNil, map, pipe, filter, propEq, prop, isEmpty } = require("ramda");
 /**
  * Returns a validator with all schemata from the given directory
  *
- * @param {string} dir An path to a directory containing json schema files.
+ * @param {string} dir A path to a directory containing json schema files.
  * @param {*} metaschema A path to a metaschema to use.
  */
 function validator(dir, metaschema = "ajv/lib/refs/json-schema-draft-04.json") {
@@ -22,28 +22,6 @@ function validator(dir, metaschema = "ajv/lib/refs/json-schema-draft-04.json") {
     }
   }
   return ajv;
-}
-
-/**
- * Returns a middleware that validates the requests body against the schema for
- * the given name. Aborts the request and sends a status code of 400 and valida-
- * tion errors, if the validation fails.
- *
- * @param {*} ajv Validator object as returned from `validator` above.
- * @param {String} schema Name of a schema that must be present in the validator.
- */
-function inBody(ajv, schema) {
-  return (req, res, next) => {
-    if (!ajv.validate(schema, req.body)) {
-      res.status(400);
-      responseData = {
-        validationErrors: ajv.errors
-      };
-      res.send(responseData);
-      return;
-    }
-    next();
-  };
 }
 
 /**
@@ -64,6 +42,61 @@ function sender(ajv, schema) {
       res.status(status);
       res.send(body);
     }
+  };
+}
+
+/**
+ * Returns a middleware that validates the requests body against the schema for
+ * the given name. Aborts the request and sends a status code of 400 and valida-
+ * tion errors, if the validation fails.
+ *
+ * @param {*} ajv Validator object as returned from `validator` above.
+ * @param {String} schema Name of a schema that must be present in the validator.
+ */
+function schemaInBody(ajv, schema) {
+  return (req, res, next) => {
+    if (!ajv.validate(schema, req.body)) {
+      res.status(400);
+      responseData = {
+        validationErrors: ajv.errors
+      };
+      res.send(responseData);
+      return;
+    }
+    next();
+  };
+}
+
+/**
+ * Returns a middleware that validates one of the requests query parameters a-
+ * gainst the schema for the given name. Aborts the request and sends a status
+ * code of 400 and validation errors, if the validation fails.
+ *
+ * @param {*} ajv             Validator object as returned from `validator` a-
+ *                            bove.
+ * @param {String}  schema    Name of a schema that must be present in the vali-
+ *                            dator.
+ * @param {String}  fieldName The name of the query parameter to validate.
+ * @param {Boolean} optional  Whether a missing query parameter should be accep-
+ *                            ted as valid.
+ */
+function schemaInQuery(ajv, schema, fieldName, optional = false) {
+  return (req, res, next) => {
+    if (optional && req.query[fieldName] === undefined) {
+      return next();
+    }
+
+    const value = JSON.parse(req.query[fieldName]);
+
+    if (!ajv.validate(schema, value)) {
+      res.status(400);
+      responseData = {
+        validationErrors: ajv.errors
+      };
+      res.send(responseData);
+      return;
+    }
+    next();
   };
 }
 
@@ -114,8 +147,9 @@ function inQuery(...params) {
 }
 
 module.exports = {
-  validator,
-  inBody,
+  inQuery,
   sender,
-  inQuery
+  schemaInBody,
+  schemaInQuery,
+  validator
 };

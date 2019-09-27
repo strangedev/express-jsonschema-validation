@@ -1,4 +1,10 @@
-const { inQuery, schemaInBody, schemaInQuery, sender, validator } = require("../validation");
+const {
+  inQuery,
+  schemaInBody,
+  schemaInQuery,
+  sender,
+  validator
+} = require("../validation");
 
 describe("validator", () => {
   it("returns a validator with all schemata in a directory", () => {
@@ -119,6 +125,23 @@ describe("schemaInQuery", () => {
     expect(res.status).toBeCalledWith(400);
     expect(res.send).toBeCalled();
     expect(next).not.toBeCalled();
+  });
+
+  it("accepts missing query parameters if optional is set to true", () => {
+    const ajv = validator(__dirname + "/schema");
+    const middleware = schemaInQuery(ajv, "city.json", "field", true);
+    const req = {
+      query: {}
+    };
+    const res = {
+      send: jest.fn(),
+      status: jest.fn()
+    };
+    const next = jest.fn();
+    middleware(req, res, next);
+    expect(res.status).not.toBeCalled();
+    expect(res.send).not.toBeCalled();
+    expect(next).toBeCalled();
   });
 });
 

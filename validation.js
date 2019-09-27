@@ -72,12 +72,20 @@ function schemaInBody(ajv, schema) {
  * gainst the schema for the given name. Aborts the request and sends a status
  * code of 400 and validation errors, if the validation fails.
  *
- * @param {*} ajv Validator object as returned from `validator` above.
- * @param {String} schema Name of a schema that must be present in the validator.
- * @param {String} fieldName The name of the query parameter to validate.
+ * @param {*} ajv             Validator object as returned from `validator` a-
+ *                            bove.
+ * @param {String}  schema    Name of a schema that must be present in the vali-
+ *                            dator.
+ * @param {String}  fieldName The name of the query parameter to validate.
+ * @param {Boolean} optional  Whether a missing query parameter should be accep-
+ *                            ted as valid.
  */
-function schemaInQuery(ajv, schema, fieldName) {
+function schemaInQuery(ajv, schema, fieldName, optional = false) {
   return (req, res, next) => {
+    if (optional && req.query[fieldName] === undefined) {
+      return next();
+    }
+
     const value = JSON.parse(req.query[fieldName]);
 
     if (!ajv.validate(schema, value)) {
